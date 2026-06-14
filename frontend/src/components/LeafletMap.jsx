@@ -44,11 +44,11 @@ export default function LeafletMap({
     mapRef.current = L.map(mapContainerRef.current, {
       center: [40.719, -73.996],
       zoom: 14,
-      zoomControl: false, // Turn off default controls to reduce clutter
+      zoomControl: false,
       attributionControl: false
     });
 
-    // Dark-themed tiles from CartoDB (perfect for neon visualizers)
+    // Dark-themed tiles from CartoDB
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 20
     }).addTo(mapRef.current);
@@ -140,29 +140,41 @@ export default function LeafletMap({
       'jammed': '#881337'      // burgundy
     };
 
+    const hasActiveRoute = activeRoute && activeRoute.pathEdges && activeRoute.pathEdges.length > 0;
+
     edges.forEach(edge => {
       const src = nodes.find(n => n.id === edge.source);
       const dest = nodes.find(n => n.id === edge.target);
       if (!src || !dest) return;
 
       const isMst = mstEdges && mstEdges.some(me => me.id === edge.id);
+      const isPartOfRoute = activeRoute && activeRoute.pathEdges && activeRoute.pathEdges.includes(edge.id);
+      
       const roadColor = isMst ? '#06b6d4' : (trafficColors[edge.traffic] || '#475569');
       const roadWeight = isMst ? 6 : (edge.lanes * 2.5) + 1.5;
+
+      // Dim non-route roads significantly if an active route is shown
+      let roadOpacity = isMst ? 0.95 : 0.65;
+      if (hasActiveRoute) {
+        roadOpacity = isPartOfRoute ? 0.95 : 0.12;
+      }
 
       const polyline = L.polyline([[src.lat, src.lng], [dest.lat, dest.lng]], {
         color: roadColor,
         weight: roadWeight,
-        opacity: isMst ? 0.95 : 0.65,
+        opacity: roadOpacity,
         lineCap: 'round'
       });
 
       // Bind interactions
       polyline.on('mouseover', () => {
-        polyline.setStyle({ color: '#f472b6', opacity: 0.95, weight: roadWeight + 2 });
+        if (!hasActiveRoute || isPartOfRoute) {
+          polyline.setStyle({ color: '#f472b6', opacity: 0.95, weight: roadWeight + 2 });
+        }
       });
 
       polyline.on('mouseout', () => {
-        polyline.setStyle({ color: roadColor, opacity: isMst ? 0.95 : 0.65, weight: roadWeight });
+        polyline.setStyle({ color: roadColor, opacity: roadOpacity, weight: roadWeight });
       });
 
       polyline.on('click', (e) => {
@@ -174,7 +186,7 @@ export default function LeafletMap({
 
       polyline.addTo(edgesGroupRef.current);
     });
-  }, [nodes, edges, mstEdges, mode, onDeleteEdge]);
+  }, [nodes, edges, mstEdges, activeRoute, mode, onDeleteEdge]);
 
   // Render Nodes (Intersections) and Traffic Lights
   useEffect(() => {
@@ -182,15 +194,23 @@ export default function LeafletMap({
 
     nodesGroupRef.current.clearLayers();
 
+    const hasActiveRoute = activeRoute && activeRoute.path && activeRoute.path.length > 0;
+
     nodes.forEach(node => {
       const isStart = startNode && startNode.id === node.id;
       const isEnd = endNode && endNode.id === node.id;
       const isSelected = selectedNode && selectedNode.id === node.id;
       const isLinking = edgeStartNode && edgeStartNode.id === node.id;
+      const isPartOfRoute = activeRoute && activeRoute.path && activeRoute.path.includes(node.id);
 
       const lightState = trafficLightsRef.current[node.id] || { color: 'green' };
-
       const lightHex = lightState.color === 'green' ? '#10b981' : (lightState.color === 'yellow' ? '#f59e0b' : '#ef4444');
+
+      // Dim non-route intersections when route is active
+      let nodeOpacity = 1.0;
+      if (hasActiveRoute) {
+        nodeOpacity = isPartOfRoute ? 1.0 : 0.25;
+      }
 
       let ringStyles = `border: 2px solid ${lightHex}; box-shadow: 0 0 6px ${lightHex};`;
       let coreClass = 'node-core';
@@ -200,7 +220,7 @@ export default function LeafletMap({
       else if (isLinking) coreClass += ' selected';
 
       const html = `
-        <div class="node-marker-container">
+        <div class="node-marker-container" style="opacity: ${nodeOpacity}">
           <div class="node-traffic-light" style="${ringStyles}">
             <div class="${coreClass}"></div>
           </div>
@@ -246,7 +266,7 @@ export default function LeafletMap({
 
       marker.addTo(nodesGroupRef.current);
     });
-  }, [nodes, startNode, endNode, selectedNode, edgeStartNode, mode, onNodeSelect, onDeleteNode, onAddRoad]);
+  }, [nodes, startNode, endNode, selectedNode, edgeStartNode, activeRoute, mode, onNodeSelect, onDeleteNode, onAddRoad]);
 
   // Render Routes overlay
   useEffect(() => {
@@ -263,16 +283,18 @@ export default function LeafletMap({
       });
 
       if (latlngs.length > 0) {
+        // High contrast glowing neon rose/pink line
         L.polyline(latlngs, {
-          color: '#a855f7',
-          weight: 10,
-          opacity: 0.35,
+          color: '#f43f5e',
+          weight: 12,
+          opacity: 0.55,
           lineJoin: 'round',
           lineCap: 'round'
         }).addTo(routeGroupRef.current);
 
+        // Core white center running line
         const routeCore = L.polyline(latlngs, {
-          color: '#d8b4fe',
+          color: '#ffffff',
           weight: 4,
           opacity: 0.95,
           dashArray: '10, 15',
@@ -477,7 +499,6 @@ export default function LeafletMap({
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '500px' }}>
-      {/* MAP LAYER CONTAINMENT */}
       <div
         ref={mapContainerRef}
         style={{
@@ -524,7 +545,7 @@ export default function LeafletMap({
         )}
       </div>
 
-      {/* FLOATING ZOOM AND RECENTER CONTROLS (Reduces Map Clutter, Easy adjustments) */}
+      {/* FLOATING ZOOM AND RECENTER CONTROLS */}
       <div
         style={{
           position: 'absolute',
