@@ -1,0 +1,12 @@
+# Render Blueprint for automated deployment
+# Link your GitHub repository to Render (https://render.com) and it will read this file automatically.
+services:
+  - type: web
+    name: urbanpulse-navigation
+    env: node
+    plan: free
+    buildCommand: npm run setup && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
