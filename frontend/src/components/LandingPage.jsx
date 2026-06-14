@@ -25,7 +25,8 @@ export default function LandingPage({ onLaunch }) {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#040810',
+      /* Blended background image related to title with linear gradient */
+      background: 'linear-gradient(180deg, rgba(4, 8, 16, 0.88) 0%, rgba(4, 8, 16, 0.96) 100%), url("/city_traffic_bg.png") center/cover no-repeat fixed',
       color: '#f8fafc',
       position: 'relative',
       overflowX: 'hidden',
@@ -39,7 +40,7 @@ export default function LandingPage({ onLaunch }) {
         width: '50vw',
         height: '50vw',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, rgba(168, 85, 247, 0) 70%)',
+        background: 'radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0) 70%)',
         filter: 'blur(90px)',
         zIndex: 1,
         pointerEvents: 'none'
@@ -51,7 +52,7 @@ export default function LandingPage({ onLaunch }) {
         width: '45vw',
         height: '45vw',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0) 70%)',
+        background: 'radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, rgba(6, 182, 212, 0) 70%)',
         filter: 'blur(90px)',
         zIndex: 1,
         pointerEvents: 'none'
@@ -63,7 +64,7 @@ export default function LandingPage({ onLaunch }) {
         width: '35vw',
         height: '35vw',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 70%)',
+        background: 'radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0) 70%)',
         filter: 'blur(80px)',
         zIndex: 1,
         pointerEvents: 'none'
