@@ -20,7 +20,8 @@ export default function Sidebar({
   onCalculateMST,
   onClearMST,
   onResetMap,
-  isMstActive
+  isMstActive,
+  onGoBack // Trigger transition back to Landing page
 }) {
   const [activeTab, setActiveTab] = useState('navigation');
   const [algorithm, setAlgorithm] = useState('traffic');
@@ -54,13 +55,23 @@ export default function Sidebar({
       overflowY: 'auto'
     }}>
       {/* Title Header */}
-      <div>
-        <h2 className="glow-text" style={{ fontSize: '1.6rem', color: '#a855f7', marginBottom: '4px' }}>
-          MetroFlow
-        </h2>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
-          City Traffic Graph Optimizer & Navigation
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 className="glow-text" style={{ fontSize: '1.6rem', color: '#a855f7', marginBottom: '4px' }}>
+            MetroFlow
+          </h2>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
+            City Traffic Flow Optimizer
+          </p>
+        </div>
+        {/* Back to Home Button */}
+        <button
+          className="btn-secondary"
+          onClick={onGoBack}
+          style={{ fontSize: '0.75rem', padding: '6px 12px' }}
+        >
+          🏠 Home
+        </button>
       </div>
 
       {/* Tabs */}
@@ -82,7 +93,7 @@ export default function Sidebar({
               borderRadius: '6px 6px 0 0'
             }}
           >
-            {tab}
+            {tab === 'navigation' ? 'Directions' : (tab === 'editor' ? 'Planner' : 'Stats')}
           </button>
         ))}
       </div>
@@ -90,10 +101,10 @@ export default function Sidebar({
       {/* TAB CONTENTS */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
         
-        {/* 1. NAVIGATION TAB */}
+        {/* 1. NAVIGATION/DIRECTIONS TAB */}
         {activeTab === 'navigation' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h3 style={{ fontSize: '1rem', color: '#f8fafc' }}>Path Routing Engine</h3>
+            <h3 style={{ fontSize: '1rem', color: '#f8fafc' }}>Smart Navigation Engine</h3>
             
             {/* Start Node Selection */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -103,7 +114,7 @@ export default function Sidebar({
                 onChange={(e) => setStartNode(nodes.find(n => n.id === e.target.value) || null)}
                 style={{ width: '100%' }}
               >
-                <option value="">-- Select Origin Node --</option>
+                <option value="">-- Select Origin Point --</option>
                 {nodes.map(node => (
                   <option key={node.id} value={node.id}>
                     {node.name} {startNode?.id === node.id ? '(Start)' : ''}
@@ -120,7 +131,7 @@ export default function Sidebar({
                 onChange={(e) => setEndNode(nodes.find(n => n.id === e.target.value) || null)}
                 style={{ width: '100%' }}
               >
-                <option value="">-- Select Destination Node --</option>
+                <option value="">-- Select Destination Point --</option>
                 {nodes.map(node => (
                   <option key={node.id} value={node.id}>
                     {node.name} {endNode?.id === node.id ? '(End)' : ''}
@@ -129,17 +140,17 @@ export default function Sidebar({
               </select>
             </div>
 
-            {/* Algorithm Selector */}
+            {/* Algorithm Selector (renamed to non-technical titles) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Routing Algorithm</label>
+              <label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Travel Path Priority</label>
               <select 
                 value={algorithm} 
                 onChange={(e) => setAlgorithm(e.target.value)}
                 style={{ width: '100%' }}
               >
-                <option value="traffic">Traffic-Aware Dijkstra (Recommended)</option>
-                <option value="dijkstra">Standard Dijkstra's Algorithm</option>
-                <option value="astar">A* Heuristic Search</option>
+                <option value="traffic">Intelligent Congestion-Dodging Route</option>
+                <option value="dijkstra">Traditional Shortest Distance Route</option>
+                <option value="astar">Direct Eco-Scenic Route</option>
               </select>
             </div>
 
@@ -151,7 +162,7 @@ export default function Sidebar({
                 disabled={!startNode || !endNode}
                 style={{ flex: 2, padding: '10px', opacity: (!startNode || !endNode) ? 0.5 : 1 }}
               >
-                Calculate Route
+                Find Route
               </button>
               <button
                 className="btn-secondary"
@@ -162,28 +173,28 @@ export default function Sidebar({
               </button>
             </div>
 
-            {/* Route Stats Result Display */}
+            {/* Route Stats Result Display (non-technical renames) */}
             {activeRoute && (
               <div className="glass-panel" style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <h4 style={{ fontSize: '0.85rem', color: '#c084fc', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Route Diagnostics
+                  Route Summary
                 </h4>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                  <span style={{ color: '#64748b' }}>Algorithm:</span>
+                  <span style={{ color: '#64748b' }}>Route Priority:</span>
                   <span style={{ fontWeight: 600, color: '#f8fafc' }}>
-                    {algorithm === 'traffic' ? 'Traffic-Aware Dijkstra' : (algorithm === 'dijkstra' ? 'Standard Dijkstra' : 'A* Heuristic')}
+                    {algorithm === 'traffic' ? 'Congestion-Dodging' : (algorithm === 'dijkstra' ? 'Traditional Shortest' : 'Direct Eco-Scenic')}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                  <span style={{ color: '#64748b' }}>Hops (Nodes):</span>
+                  <span style={{ color: '#64748b' }}>Intersections Visited:</span>
                   <span style={{ fontWeight: 600, color: '#f8fafc' }}>
                     {activeRoute.path ? activeRoute.path.length : 0}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                  <span style={{ color: '#64748b' }}>Path distance:</span>
+                  <span style={{ color: '#64748b' }}>Total Travel Distance:</span>
                   <span style={{ fontWeight: 600, color: '#f8fafc' }}>
-                    {activeRoute.totalCost ? Math.round(activeRoute.totalCost) : 0} m
+                    {activeRoute.totalCost ? Math.round(activeRoute.totalCost) : 0} meters
                   </span>
                 </div>
               </div>
@@ -191,7 +202,7 @@ export default function Sidebar({
           </div>
         )}
 
-        {/* 2. EDITOR & SIMULATOR TAB */}
+        {/* 2. MAP EDITOR & PLANNER TAB */}
         {activeTab === 'editor' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Map Interaction Modes */}
@@ -209,7 +220,7 @@ export default function Sidebar({
                     fontWeight: 600
                   }}
                 >
-                  🔍 Inspect Node
+                  🔍 Inspect Intersection
                 </button>
                 <button
                   onClick={() => setMode('add-node')}
@@ -222,7 +233,7 @@ export default function Sidebar({
                     fontWeight: 600
                   }}
                 >
-                  ➕ Add Intersection
+                  ➕ Place Intersection
                 </button>
                 <button
                   onClick={() => setMode('add-edge')}
@@ -235,7 +246,7 @@ export default function Sidebar({
                     fontWeight: 600
                   }}
                 >
-                  🔗 Add Road
+                  🔗 Link Intersections
                 </button>
                 <button
                   className="btn-danger"
@@ -248,7 +259,7 @@ export default function Sidebar({
                     fontWeight: 600
                   }}
                 >
-                  🗑️ Delete Mode
+                  🗑️ Removal Tool
                 </button>
               </div>
             </div>
@@ -280,14 +291,14 @@ export default function Sidebar({
                 onClick={onTriggerRandomJams}
                 style={{ padding: '8px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
-                💥 Inject Random Jams
+                💥 Simulate Random Jams
               </button>
               <button
                 className="btn-secondary"
                 onClick={onResetTraffic}
                 style={{ padding: '8px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
-                🟢 Clear Network Traffic
+                🟢 Clear Road Congestions
               </button>
               
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -296,7 +307,7 @@ export default function Sidebar({
                   onClick={onCalculateMST}
                   style={{ flex: 1, padding: '8px 12px', fontSize: '0.8rem', backgroundColor: isMstActive ? 'rgba(6, 182, 212, 0.15)' : '', borderColor: isMstActive ? '#06b6d4' : '' }}
                 >
-                  🕸️ Calculate MST
+                  🕸️ Design Optimal Grid
                 </button>
                 {isMstActive && (
                   <button
@@ -304,7 +315,7 @@ export default function Sidebar({
                     onClick={onClearMST}
                     style={{ padding: '8px 12px', fontSize: '0.8rem' }}
                   >
-                    Clear MST
+                    Clear Backbone
                   </button>
                 )}
               </div>
@@ -314,16 +325,16 @@ export default function Sidebar({
                 onClick={onResetMap}
                 style={{ padding: '8px 12px', fontSize: '0.8rem', marginTop: '10px' }}
               >
-                🔄 Reset Map to Grid Defaults
+                🔄 Reset Map to Default Grid
               </button>
             </div>
           </div>
         )}
 
-        {/* 3. ANALYTICS TAB */}
+        {/* 3. STATS/METRICS TAB */}
         {activeTab === 'analytics' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h3 style={{ fontSize: '1rem', color: '#f8fafc' }}>Real-time Dashboard Metrics</h3>
+            <h3 style={{ fontSize: '1rem', color: '#f8fafc' }}>Real-time Traffic Metrics</h3>
 
             {/* Congestion Index Box */}
             <div className="glass-panel" style={{
@@ -335,7 +346,7 @@ export default function Sidebar({
               gap: '6px',
               borderLeft: `5px solid ${getCongestionColor(congestionIndex)}`
             }}>
-              <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase' }}>Network Congestion Index</span>
+              <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase' }}>City Congestion Index</span>
               <span style={{ fontSize: '2.5rem', fontWeight: 800, color: getCongestionColor(congestionIndex) }}>
                 {congestionIndex}%
               </span>
@@ -352,7 +363,7 @@ export default function Sidebar({
               </div>
               <div className="glass-panel" style={{ padding: '12px', textAlign: 'center', background: 'rgba(255,255,255,0.01)' }}>
                 <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#06b6d4' }}>{edges.length}</div>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase' }}>Active Roads</div>
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase' }}>Roadways</div>
               </div>
             </div>
 
@@ -360,7 +371,7 @@ export default function Sidebar({
             {selectedNode ? (
               <div className="glass-panel" style={{ padding: '14px', background: 'rgba(168, 85, 247, 0.05)', borderColor: 'rgba(168, 85, 247, 0.2)' }}>
                 <h4 style={{ fontSize: '0.85rem', color: '#d8b4fe', marginBottom: '8px', textTransform: 'uppercase' }}>
-                  Node Inspector
+                  Intersection Inspector
                 </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -373,19 +384,19 @@ export default function Sidebar({
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: '#64748b' }}>Coordinates:</span>
-                    <span style={{ color: '#f8fafc' }}>X: {selectedNode.x}, Y: {selectedNode.y}</span>
+                    <span style={{ color: '#f8fafc' }}>Lat: {selectedNode.lat.toFixed(4)}, Lng: {selectedNode.lng.toFixed(4)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: '#64748b' }}>Traffic Light:</span>
                     <span style={{ fontWeight: 600, textTransform: 'uppercase', color: selectedNode.trafficLight === 'red' ? '#ef4444' : '#10b981' }}>
-                      {selectedNode.trafficLight} ({selectedNode.lightTimer || 5}s)
+                      {selectedNode.trafficLight} ({selectedNode.lightTimer || 5}s cycle)
                     </span>
                   </div>
                 </div>
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '16px', color: '#64748b', fontSize: '0.75rem', border: '1px dashed var(--border-glass)', borderRadius: '8px' }}>
-                Select an intersection on the canvas in "Inspect Node" mode to view local traffic stats.
+                Select an intersection on the map in "Inspect Intersection" mode to view local coordinates and light details.
               </div>
             )}
           </div>
@@ -394,7 +405,7 @@ export default function Sidebar({
 
       {/* Footer Info */}
       <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#64748b' }}>
-        <span>Graph Engine v1.0</span>
+        <span>MetroFlow v1.2</span>
         <span>Made with 💜</span>
       </div>
     </div>

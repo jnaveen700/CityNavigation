@@ -3,22 +3,22 @@ import React from 'react';
 export default function Legend() {
   const legendItems = [
     { label: 'Start Intersection', color: '#10b981', type: 'node' },
-    { label: 'End Intersection', color: '#ef4444', type: 'node' },
-    { label: 'Selected Node', color: '#a855f7', type: 'node' },
-    { label: 'Normal Traffic / Clear', color: 'rgba(16, 185, 129, 0.6)', type: 'road' },
-    { label: 'Moderate Congestion', color: 'rgba(245, 158, 11, 0.7)', type: 'road' },
-    { label: 'Heavy Traffic', color: 'rgba(239, 68, 68, 0.8)', type: 'road' },
-    { label: 'Gridlock / Jammed', color: 'rgba(136, 19, 55, 0.95)', type: 'road' },
+    { label: 'Destination Intersection', color: '#ef4444', type: 'node' },
+    { label: 'Inspected Intersection', color: '#a855f7', type: 'node' },
+    { label: 'Normal Flow (Clear)', color: 'rgba(16, 185, 129, 0.6)', type: 'road' },
+    { label: 'Moderate Delays', color: 'rgba(245, 158, 11, 0.7)', type: 'road' },
+    { label: 'Heavy Delays', color: 'rgba(239, 68, 68, 0.8)', type: 'road' },
+    { label: 'Gridlock (Jammed)', color: 'rgba(136, 19, 55, 0.95)', type: 'road' },
     { label: 'Calculated Route', color: '#d8b4fe', type: 'path' },
-    { label: 'Network MST Backbone', color: '#06b6d4', type: 'mst' }
+    { label: 'Optimal Grid Backbone', color: '#06b6d4', type: 'mst' }
   ];
 
   return (
     <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <h3 style={{ fontSize: '0.95rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '8px', color: '#f8fafc' }}>
-        Map Visual Legend
+        Map Visual Guide
       </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(165px, 1fr))', gap: '10px' }}>
         {legendItems.map((item, idx) => (
           <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {item.type === 'node' && (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LandingPage from './components/LandingPage';
 import LeafletMap from './components/LeafletMap';
 import Sidebar from './components/Sidebar';
 import Legend from './components/Legend';
@@ -57,6 +58,7 @@ const streetPrefixes = ['Pine', 'Oak', 'Maple', 'Cedar', 'Elm', 'Sunset', 'Grand
 const streetSuffixes = ['Avenue', 'Blvd', 'Street', 'Crossing', 'Square', 'Way', 'Junction', 'Hub'];
 
 export default function App() {
+  const [view, setView] = useState('landing'); // 'landing' or 'app'
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -113,7 +115,6 @@ export default function App() {
 
   // Add a new intersection node (click on Map)
   const handleAddNode = (coords) => {
-    // Generate a unique street name
     const prefix = streetPrefixes[Math.floor(Math.random() * streetPrefixes.length)];
     const suffix = streetSuffixes[Math.floor(Math.random() * streetSuffixes.length)];
     const nodeName = `${prefix} ${suffix}`;
@@ -125,7 +126,7 @@ export default function App() {
       lat: coords.lat,
       lng: coords.lng,
       trafficLight: Math.random() > 0.5 ? 'green' : 'red',
-      lightTimer: 5 + Math.floor(Math.random() * 6) // 5 to 10 seconds
+      lightTimer: 5 + Math.floor(Math.random() * 6)
     };
 
     const updatedNodes = [...nodes, newNode];
@@ -148,7 +149,6 @@ export default function App() {
     const destNode = nodes.find(n => n.id === targetId);
     if (!srcNode || !destNode) return;
 
-    // Haversine distance in meters
     const distance = Math.round(getHaversineDistance(srcNode.lat, srcNode.lng, destNode.lat, destNode.lng));
     const roadId = 'e_' + Math.random().toString(36).substring(2, 9);
 
@@ -158,7 +158,7 @@ export default function App() {
       target: targetId,
       distance: distance,
       traffic: 'clear',
-      speedLimit: 50 + (Math.random() > 0.6 ? 20 : 0), // 50 or 70
+      speedLimit: 50 + (Math.random() > 0.6 ? 20 : 0),
       lanes: Math.random() > 0.5 ? 3 : 2
     };
 
@@ -193,7 +193,7 @@ export default function App() {
   const handleFindRoute = async (algorithm) => {
     if (!startNode || !endNode) return;
     
-    setMstEdges([]); // Clear MST view when computing routes
+    setMstEdges([]);
 
     try {
       const response = await fetch('/api/route', {
@@ -284,6 +284,11 @@ export default function App() {
     }
   };
 
+  // Main Conditional View Render
+  if (view === 'landing') {
+    return <LandingPage onLaunch={() => setView('app')} />;
+  }
+
   return (
     <div style={{
       display: 'flex',
@@ -293,7 +298,7 @@ export default function App() {
       backgroundColor: 'var(--bg-primary)',
       overflow: 'hidden'
     }}>
-      {/* Top Banner Alert (API offline check) */}
+      {/* Top Banner Alert */}
       {apiError && (
         <div style={{
           background: 'rgba(245, 158, 11, 0.15)',
@@ -397,6 +402,7 @@ export default function App() {
             onClearMST={handleClearMST}
             onResetMap={handleResetMap}
             isMstActive={mstEdges.length > 0}
+            onGoBack={() => setView('landing')}
           />
         </div>
 
