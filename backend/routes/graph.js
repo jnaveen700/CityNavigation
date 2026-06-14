@@ -90,6 +90,20 @@ async function getRoadGeometry(src, dest) {
   return { distance, geometry: null };
 }
 
+// OSRM API Route fetcher for arbitrary coordinates
+async function getOSRMRoute(src, dest) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${src.lng},${src.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('OSRM Server Error');
+  const data = await res.json();
+  if (data.code === 'Ok' && data.routes && data.routes[0]) {
+    const distance = Math.round(data.routes[0].distance);
+    const geometry = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+    return { distance, geometry };
+  }
+  throw new Error('No route found by OSRM');
+}
+
 // Background Hydrator on Start
 async function hydrateInitialMapGeometries() {
   console.log('Fetching real-world street geometries from OSRM...');
@@ -161,7 +175,7 @@ router.post('/map', async (req, res) => {
 });
 
 // 3. Compute route
-router.post('/route', (req, res) => {
+router.post('/route', async (req, res) => {
   const { startNodeId, endNodeId, algorithm } = req.body;
   if (!startNodeId || !endNodeId) {
     return res.status(400).json({ error: 'startNodeId and endNodeId are required.' });
@@ -170,6 +184,30 @@ router.post('/route', (req, res) => {
   const nodeIds = currentMap.nodes.map(n => n.id);
   if (!nodeIds.includes(startNodeId) || !nodeIds.includes(endNodeId)) {
     return res.status(404).json({ error: 'Start or end node not found in the graph.' });
+  }
+
+  if (algorithm === 'osrm') {
+    const startNode = currentMap.nodes.find(n => n.id === startNodeId);
+    const endNode = currentMap.nodes.find(n => n.id === endNodeId);
+    try {
+      const roadData = await getOSRMRoute(startNode, endNode);
+      return res.json({
+        algorithm: 'osrm',
+        path: [startNodeId, endNodeId],
+        pathEdges: [],
+        totalCost: roadData.distance,
+        geometry: roadData.geometry,
+        visited: [startNodeId, endNodeId]
+      });
+    } catch (err) {
+      console.warn('OSRM routing failed, falling back to traffic-aware Dijkstra:', err);
+      const result = pathfinder.dijkstra(currentMap.nodes, currentMap.edges, startNodeId, endNodeId, true);
+      return res.json({
+        algorithm: 'osrm-fallback',
+        ...result,
+        message: 'OSRM routing failed. Fell back to traffic-aware graph routing.'
+      });
+    }
   }
 
   let result;

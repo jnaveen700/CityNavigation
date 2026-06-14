@@ -151,6 +151,7 @@ export default function Sidebar({
                 <option value="traffic">Intelligent Congestion-Dodging Route</option>
                 <option value="dijkstra">Traditional Shortest Distance Route</option>
                 <option value="astar">Direct Eco-Scenic Route</option>
+                <option value="osrm">Real-World OSRM Street Route</option>
               </select>
             </div>
 
@@ -182,7 +183,7 @@ export default function Sidebar({
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
                   <span style={{ color: '#64748b' }}>Route Priority:</span>
                   <span style={{ fontWeight: 600, color: '#f8fafc' }}>
-                    {algorithm === 'traffic' ? 'Congestion-Dodging' : (algorithm === 'dijkstra' ? 'Traditional Shortest' : 'Direct Eco-Scenic')}
+                    {algorithm === 'traffic' ? 'Congestion-Dodging' : (algorithm === 'dijkstra' ? 'Traditional Shortest' : (algorithm === 'astar' ? 'Direct Eco-Scenic' : 'Real-World OSRM'))}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>

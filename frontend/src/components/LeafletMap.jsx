@@ -140,7 +140,10 @@ export default function LeafletMap({
       'jammed': '#881337'      // burgundy
     };
 
-    const hasActiveRoute = activeRoute && activeRoute.pathEdges && activeRoute.pathEdges.length > 0;
+    const hasActiveRoute = activeRoute && (
+      (activeRoute.pathEdges && activeRoute.pathEdges.length > 0) ||
+      (activeRoute.geometry && activeRoute.geometry.length > 0)
+    );
 
     edges.forEach(edge => {
       const src = nodes.find(n => n.id === edge.source);
@@ -278,33 +281,37 @@ export default function LeafletMap({
 
     routeGroupRef.current.clearLayers();
 
-    if (activeRoute && activeRoute.pathEdges && activeRoute.pathEdges.length > 0) {
-      const latlngs = [];
+    if (activeRoute) {
+      let latlngs = [];
 
-      activeRoute.pathEdges.forEach(edgeId => {
-        const edge = edges.find(e => e.id === edgeId);
-        if (edge) {
-          if (edge.geometry && edge.geometry.length > 0) {
-            // Align geometries in coordinate sequence (source -> target order)
-            const coords = [...edge.geometry];
-            if (latlngs.length > 0) {
-              const lastPt = latlngs[latlngs.length - 1];
-              const distToFirst = Math.hypot(lastPt[0] - coords[0][0], lastPt[1] - coords[0][1]);
-              const distToLast = Math.hypot(lastPt[0] - coords[coords.length - 1][0], lastPt[1] - coords[coords.length - 1][1]);
-              if (distToLast < distToFirst) {
-                coords.reverse();
+      if (activeRoute.geometry && activeRoute.geometry.length > 0) {
+        latlngs = activeRoute.geometry;
+      } else if (activeRoute.pathEdges && activeRoute.pathEdges.length > 0) {
+        activeRoute.pathEdges.forEach(edgeId => {
+          const edge = edges.find(e => e.id === edgeId);
+          if (edge) {
+            if (edge.geometry && edge.geometry.length > 0) {
+              // Align geometries in coordinate sequence (source -> target order)
+              const coords = [...edge.geometry];
+              if (latlngs.length > 0) {
+                const lastPt = latlngs[latlngs.length - 1];
+                const distToFirst = Math.hypot(lastPt[0] - coords[0][0], lastPt[1] - coords[0][1]);
+                const distToLast = Math.hypot(lastPt[0] - coords[coords.length - 1][0], lastPt[1] - coords[coords.length - 1][1]);
+                if (distToLast < distToFirst) {
+                  coords.reverse();
+                }
+              }
+              latlngs.push(...coords);
+            } else {
+              const src = nodes.find(n => n.id === edge.source);
+              const dest = nodes.find(n => n.id === edge.target);
+              if (src && dest) {
+                latlngs.push([src.lat, src.lng], [dest.lat, dest.lng]);
               }
             }
-            latlngs.push(...coords);
-          } else {
-            const src = nodes.find(n => n.id === edge.source);
-            const dest = nodes.find(n => n.id === edge.target);
-            if (src && dest) {
-              latlngs.push([src.lat, src.lng], [dest.lat, dest.lng]);
-            }
           }
-        }
-      });
+        });
+      }
 
       if (latlngs.length > 0) {
         L.polyline(latlngs, {

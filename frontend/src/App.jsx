@@ -219,7 +219,8 @@ export default function App() {
       setActiveRoute({
         path: data.path,
         pathEdges: data.pathEdges,
-        totalCost: data.totalCost
+        totalCost: data.totalCost,
+        geometry: data.geometry
       });
       setVisitedNodes(data.visited);
     } catch (err) {
