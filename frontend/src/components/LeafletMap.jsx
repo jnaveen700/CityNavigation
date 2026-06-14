@@ -34,6 +34,7 @@ export default function LeafletMap({
 }) {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
+  const [isMapReady, setIsMapReady] = useState(false);
 
   // Group Layers for overlays
   const nodesGroupRef = useRef(L.layerGroup());
@@ -80,7 +81,7 @@ export default function LeafletMap({
 
   // Dynamic tile switching effect based on mapTheme
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !isMapReady) return;
 
     if (tileLayerRef.current) {
       tileLayerRef.current.remove();
@@ -98,7 +99,7 @@ export default function LeafletMap({
     tileLayerRef.current = L.tileLayer(tileUrl, {
       maxZoom: 19
     }).addTo(mapRef.current);
-  }, [mapTheme]);
+  }, [mapTheme, isMapReady]);
 
   // Dynamic viewport centering based on active sector
   useEffect(() => {
@@ -134,10 +135,13 @@ export default function LeafletMap({
       opacity: 0.7
     });
 
+    setIsMapReady(true);
+
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
+        setIsMapReady(false);
       }
     };
   }, []);
