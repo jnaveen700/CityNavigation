@@ -3,6 +3,8 @@ import LandingPage from './components/LandingPage';
 import LeafletMap from './components/LeafletMap';
 import Sidebar from './components/Sidebar';
 import Legend from './components/Legend';
+import PresetsPage from './components/PresetsPage';
+import GuidePage from './components/GuidePage';
 
 // Client side helper: calculate Haversine distance in meters
 function getHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -53,12 +55,11 @@ const DEFAULT_MAP = {
   ]
 };
 
-// Nice node name generators
 const streetPrefixes = ['Pine', 'Oak', 'Maple', 'Cedar', 'Elm', 'Sunset', 'Grand', 'Lexington', 'Broadway', 'Central', 'Park', 'Industrial', 'Harbor'];
 const streetSuffixes = ['Avenue', 'Blvd', 'Street', 'Crossing', 'Square', 'Way', 'Junction', 'Hub'];
 
 export default function App() {
-  const [view, setView] = useState('landing'); // 'landing' or 'app'
+  const [view, setView] = useState('landing'); // 'landing', 'app', 'presets', 'guide'
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -289,6 +290,33 @@ export default function App() {
     return <LandingPage onLaunch={() => setView('app')} />;
   }
 
+  if (view === 'presets') {
+    return (
+      <PresetsPage
+        currentNodes={nodes}
+        currentEdges={edges}
+        onLoadMap={(newNodes, newEdges) => {
+          setSelectedNode(null);
+          setStartNode(null);
+          setEndNode(null);
+          handleClearRoute();
+          setMstEdges([]);
+          saveMap(newNodes, newEdges);
+          setView('app');
+        }}
+        onBack={() => setView('app')}
+      />
+    );
+  }
+
+  if (view === 'guide') {
+    return (
+      <GuidePage
+        onBack={() => setView('app')}
+      />
+    );
+  }
+
   return (
     <div style={{
       display: 'flex',
@@ -298,7 +326,73 @@ export default function App() {
       backgroundColor: 'var(--bg-primary)',
       overflow: 'hidden'
     }}>
-      {/* Top Banner Alert */}
+      {/* 1. APP HEADER NAVIGATION BAR (Sleek multi page routing) */}
+      <header style={{
+        background: 'rgba(10, 17, 32, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid var(--border-glass)',
+        padding: '12px 24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        zIndex: 2000
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => setView('landing')}>
+          <span style={{ fontSize: '1.4rem' }}>🚦</span>
+          <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: '1.25rem' }}>
+            Urban<span style={{ color: '#a855f7' }}>Pulse</span>
+          </span>
+        </div>
+        <nav style={{ display: 'flex', gap: '24px' }}>
+          <button 
+            onClick={() => setView('app')} 
+            style={{ 
+              background: 'transparent', 
+              border: 'none', 
+              color: view === 'app' ? '#a855f7' : '#94a3b8', 
+              fontWeight: view === 'app' ? 700 : 500, 
+              cursor: 'pointer',
+              fontSize: '0.88rem',
+              outline: 'none',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            🌐 Live Simulator Map
+          </button>
+          <button 
+            onClick={() => setView('presets')} 
+            style={{ 
+              background: 'transparent', 
+              border: 'none', 
+              color: view === 'presets' ? '#a855f7' : '#94a3b8', 
+              fontWeight: view === 'presets' ? 700 : 500, 
+              cursor: 'pointer',
+              fontSize: '0.88rem',
+              outline: 'none',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            🗺️ Preset Templates
+          </button>
+          <button 
+            onClick={() => setView('guide')} 
+            style={{ 
+              background: 'transparent', 
+              border: 'none', 
+              color: view === 'guide' ? '#a855f7' : '#94a3b8', 
+              fontWeight: view === 'guide' ? 700 : 500, 
+              cursor: 'pointer',
+              fontSize: '0.88rem',
+              outline: 'none',
+              transition: 'color 0.2s ease'
+            }}
+          >
+            📖 Planning Guide
+          </button>
+        </nav>
+      </header>
+
+      {/* Top Banner Alert (API offline check) */}
       {apiError && (
         <div style={{
           background: 'rgba(245, 158, 11, 0.15)',
