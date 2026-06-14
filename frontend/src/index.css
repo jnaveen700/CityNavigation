@@ -4,15 +4,15 @@
   font-weight: 400;
 
   /* Color Palette - Deep Dark Tech & Neon */
-  --bg-primary: #080c14;
-  --bg-secondary: #0f172a;
-  --bg-panel: rgba(15, 23, 42, 0.82);
+  --bg-primary: #040810;
+  --bg-secondary: #0a1120;
+  --bg-panel: rgba(10, 17, 32, 0.8);
   --border-glass: rgba(255, 255, 255, 0.08);
   --border-focus: rgba(168, 85, 247, 0.4);
   
   --color-text-primary: #f8fafc;
   --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
+  --color-text-muted: #5e6b7d;
   
   /* Neon Accents */
   --accent-cyan: #06b6d4;
@@ -44,7 +44,6 @@
 body {
   margin: 0;
   min-height: 100vh;
-  overflow: hidden;
   background-color: var(--bg-primary);
   font-family: 'Inter', sans-serif;
 }
@@ -99,7 +98,7 @@ input, select, button {
   font-family: inherit;
   font-size: 0.9rem;
   color: var(--color-text-primary);
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(10, 17, 32, 0.6);
   border: 1px solid var(--border-glass);
   border-radius: 8px;
   padding: 8px 12px;
@@ -114,17 +113,17 @@ input:focus, select:focus {
 
 /* Styled Button */
 .btn-primary {
-  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%);
   color: white;
   border: none;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 14px 0 rgba(124, 58, 237, 0.4);
+  box-shadow: 0 4px 14px 0 rgba(168, 85, 247, 0.4);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px 0 rgba(124, 58, 237, 0.6);
+  box-shadow: 0 6px 20px 0 rgba(168, 85, 247, 0.6);
 }
 
 .btn-primary:active {
@@ -132,15 +131,15 @@ input:focus, select:focus {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--color-text-primary);
   border: 1px solid var(--border-glass);
   cursor: pointer;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .btn-danger {
@@ -282,5 +281,40 @@ input:focus, select:focus {
 /* Vehicle marker shadow glow */
 .vehicle-glow-dot {
   filter: drop-shadow(0 0 4px currentColor);
-  transition: all 0.05s linear; /* Smooth dot movement */
+  transition: all 0.05s linear;
+}
+
+/* ==========================================
+   Floating Background Animations for Landing
+   ========================================== */
+@keyframes float-slow {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(40px, -60px) scale(1.15); }
+  66% { transform: translate(-30px, 30px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+@keyframes float-medium {
+  0% { transform: translate(0px, 0px) scale(1); }
+  50% { transform: translate(-50px, 50px) scale(1.1); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+@keyframes float-fast {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(-25px, -30px) scale(0.95); }
+  66% { transform: translate(30px, 20px) scale(1.08); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+.floating-orb-1 {
+  animation: float-slow 22s infinite ease-in-out;
+}
+
+.floating-orb-2 {
+  animation: float-medium 18s infinite ease-in-out;
+}
+
+.floating-orb-3 {
+  animation: float-fast 14s infinite ease-in-out;
 }

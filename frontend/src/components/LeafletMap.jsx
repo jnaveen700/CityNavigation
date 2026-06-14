@@ -22,7 +22,7 @@ export default function LeafletMap({
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
 
-  // Group Layers for Leaflet overlays
+  // Group Layers for overlays
   const nodesGroupRef = useRef(L.layerGroup());
   const edgesGroupRef = useRef(L.layerGroup());
   const routeGroupRef = useRef(L.layerGroup());
@@ -44,7 +44,7 @@ export default function LeafletMap({
     mapRef.current = L.map(mapContainerRef.current, {
       center: [40.719, -73.996],
       zoom: 14,
-      zoomControl: true,
+      zoomControl: false, // Turn off default controls to reduce clutter
       attributionControl: false
     });
 
@@ -68,13 +68,6 @@ export default function LeafletMap({
       opacity: 0.7
     });
 
-    // Handle Map click for adding nodes
-    mapRef.current.on('click', (e) => {
-      // We check ref mode using a state closure issue workaround
-      // But standard event listeners can read from state if bound correctly,
-      // or we can attach properties to the map ref
-    });
-
     return () => {
       if (mapRef.current) {
         mapRef.current.remove();
@@ -92,7 +85,6 @@ export default function LeafletMap({
       if (mode === 'add-node') {
         onCanvasClick({ lat: e.latlng.lat, lng: e.latlng.lng });
       } else {
-        // Clear selection on empty space click
         onNodeSelect(null);
         setEdgeStartNode(null);
         if (tempPolylineRef.current.map) {
@@ -198,16 +190,14 @@ export default function LeafletMap({
 
       const lightState = trafficLightsRef.current[node.id] || { color: 'green' };
 
-      // Map light state to colors
       const lightHex = lightState.color === 'green' ? '#10b981' : (lightState.color === 'yellow' ? '#f59e0b' : '#ef4444');
 
-      // Setup custom DivIcon
       let ringStyles = `border: 2px solid ${lightHex}; box-shadow: 0 0 6px ${lightHex};`;
       let coreClass = 'node-core';
       if (isStart) coreClass += ' start';
       else if (isEnd) coreClass += ' end';
       else if (isSelected) coreClass += ' selected';
-      else if (isLinking) coreClass += ' selected'; // glow purple too
+      else if (isLinking) coreClass += ' selected';
 
       const html = `
         <div class="node-marker-container">
@@ -226,7 +216,6 @@ export default function LeafletMap({
 
       const marker = L.marker([node.lat, node.lng], { icon });
 
-      // Click behavior
       marker.on('click', (e) => {
         L.DomEvent.stopPropagation(e);
         if (mode === 'delete') {
@@ -248,7 +237,6 @@ export default function LeafletMap({
         }
       });
 
-      // Bind tooltip for names
       marker.bindTooltip(node.name, {
         permanent: false,
         direction: 'top',
@@ -275,8 +263,7 @@ export default function LeafletMap({
       });
 
       if (latlngs.length > 0) {
-        // Glowing route line
-        const routeGlow = L.polyline(latlngs, {
+        L.polyline(latlngs, {
           color: '#a855f7',
           weight: 10,
           opacity: 0.35,
@@ -284,17 +271,15 @@ export default function LeafletMap({
           lineCap: 'round'
         }).addTo(routeGroupRef.current);
 
-        // Core path line
         const routeCore = L.polyline(latlngs, {
           color: '#d8b4fe',
           weight: 4,
           opacity: 0.95,
-          dashArray: '10, 15', // dotted animation ready
+          dashArray: '10, 15',
           lineJoin: 'round',
           lineCap: 'round'
         }).addTo(routeGroupRef.current);
 
-        // Simple polyline animation offset simulation
         let dashOffset = 0;
         const animInterval = setInterval(() => {
           dashOffset = (dashOffset - 1) % 25;
@@ -309,7 +294,7 @@ export default function LeafletMap({
     }
   }, [activeRoute, nodes]);
 
-  // Search animation (Visited nodes pulse)
+  // Search animation
   useEffect(() => {
     if (!mapRef.current) return;
     searchGroupRef.current.clearLayers();
@@ -326,7 +311,6 @@ export default function LeafletMap({
         const nodeId = visitedNodes[visitedIndex];
         const node = nodes.find(n => n.id === nodeId);
         if (node) {
-          // Add a temporary pulsing circle marker
           L.circleMarker([node.lat, node.lng], {
             radius: 15,
             color: '#06b6d4',
@@ -338,7 +322,7 @@ export default function LeafletMap({
         }
 
         visitedIndex++;
-      }, 150 / (simulationSpeed || 1)); // adjust pulse speed based on sim settings
+      }, 150 / (simulationSpeed || 1));
 
       return () => clearInterval(interval);
     }
@@ -348,7 +332,6 @@ export default function LeafletMap({
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Reset vehicle markers
     vehiclesGroupRef.current.clearLayers();
     vehiclesRef.current = [];
 
@@ -357,7 +340,6 @@ export default function LeafletMap({
     const targetCount = Math.min(edges.length * 3, 30);
     const vehicleColors = ['#06b6d4', '#e11d48', '#fbbf24', '#a855f7', '#38bdf8', '#f472b6'];
 
-    // Spawn initial vehicle objects
     const initialVehicles = [];
     for (let i = 0; i < targetCount; i++) {
       const edge = edges[Math.floor(Math.random() * edges.length)];
@@ -371,7 +353,6 @@ export default function LeafletMap({
       const vlat = srcNode.lat + (destNode.lat - srcNode.lat) * progress;
       const vlng = srcNode.lng + (destNode.lng - srcNode.lng) * progress;
 
-      // Create Leaflet circle marker for vehicle
       const vMarker = L.circleMarker([vlat, vlng], {
         radius: 4.5,
         color: color,
@@ -385,7 +366,7 @@ export default function LeafletMap({
         id: Math.random().toString(36).substring(2, 9),
         edgeId: edge.id,
         progress: progress,
-        speed: 0.005 + Math.random() * 0.008, // base step per frame
+        speed: 0.005 + Math.random() * 0.008,
         color: color,
         direction: Math.random() > 0.5 ? 1 : -1,
         marker: vMarker
@@ -394,19 +375,17 @@ export default function LeafletMap({
 
     vehiclesRef.current = initialVehicles;
 
-    // Run Simulation loop at ~20fps (every 50ms) to conserve CPU
     const simTimer = setInterval(() => {
       const speedMult = simulationSpeed;
       if (speedMult <= 0) return;
 
-      // 1. Update Traffic light states in ref
       Object.keys(trafficLightsRef.current).forEach(nodeId => {
         const light = trafficLightsRef.current[nodeId];
-        light.timer -= 1; // 1 frame count
+        light.timer -= 1;
         if (light.timer <= 0) {
           if (light.color === 'green') {
             light.color = 'yellow';
-            light.timer = 40; // 2 seconds at 20fps
+            light.timer = 40;
           } else if (light.color === 'yellow') {
             light.color = 'red';
             light.timer = light.maxTimer;
@@ -417,10 +396,8 @@ export default function LeafletMap({
         }
       });
 
-      // Update Node marker class styles in real-world map DOM
       nodesGroupRef.current.eachLayer(marker => {
         const markerLatLng = marker.getLatLng();
-        // find node
         const node = nodes.find(n => Math.abs(n.lat - markerLatLng.lat) < 0.0001 && Math.abs(n.lng - markerLatLng.lng) < 0.0001);
         if (node) {
           const lightState = trafficLightsRef.current[node.id] || { color: 'green' };
@@ -437,7 +414,6 @@ export default function LeafletMap({
         }
       });
 
-      // 2. Update Vehicles
       const trafficMultipliers = { 'clear': 1.0, 'moderate': 0.6, 'heavy': 0.25, 'jammed': 0.04 };
 
       vehiclesRef.current.forEach(vehicle => {
@@ -452,7 +428,6 @@ export default function LeafletMap({
         const roadSpeedLimit = edge.speedLimit || 50;
         const lanes = edge.lanes || 2;
         
-        // Speed step
         const step = vehicle.speed * speedMult * congestionMultiplier * (roadSpeedLimit / 50) * (1 + (lanes - 1) * 0.1);
 
         const destNodeId = vehicle.direction === 1 ? edge.target : edge.source;
@@ -462,14 +437,13 @@ export default function LeafletMap({
         
         if (nextProgress >= 0.95 && vehicle.progress < 0.95) {
           if (light && light.color === 'red') {
-            vehicle.progress = 0.95; // Stop
+            vehicle.progress = 0.95;
           } else if (light && light.color === 'yellow') {
-            vehicle.progress += step * 0.35; // Slow
+            vehicle.progress += step * 0.35;
           } else {
             vehicle.progress = nextProgress;
           }
         } else if (nextProgress >= 1.0) {
-          // Switch to another edge connected to destNodeId
           const connected = edges.filter(e => e.id !== edge.id && (e.source === destNodeId || e.target === destNodeId));
           if (connected.length > 0 && Math.random() > 0.15) {
             const nextEdge = connected[Math.floor(Math.random() * connected.length)];
@@ -477,7 +451,6 @@ export default function LeafletMap({
             vehicle.progress = 0;
             vehicle.direction = nextEdge.source === destNodeId ? 1 : -1;
           } else {
-            // Reverse direction
             vehicle.progress = 0;
             vehicle.direction = vehicle.direction * -1;
           }
@@ -485,7 +458,6 @@ export default function LeafletMap({
           vehicle.progress = nextProgress;
         }
 
-        // Interpolate Lat Lng
         const startPt = vehicle.direction === 1 ? src : dest;
         const endPt = vehicle.direction === 1 ? dest : src;
 
@@ -505,14 +477,16 @@ export default function LeafletMap({
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '500px' }}>
+      {/* MAP LAYER CONTAINMENT */}
       <div
         ref={mapContainerRef}
         style={{
           width: '100%',
           height: '100%',
-          backgroundColor: '#080c14'
+          backgroundColor: '#040810'
         }}
       />
+      
       {/* Floating Info Box */}
       <div
         style={{
@@ -523,7 +497,7 @@ export default function LeafletMap({
           pointerEvents: 'none',
           padding: '8px 12px',
           borderRadius: '8px',
-          background: 'rgba(15, 23, 42, 0.85)',
+          background: 'rgba(10, 17, 32, 0.85)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           fontSize: '0.8rem',
           display: 'flex',
@@ -548,6 +522,90 @@ export default function LeafletMap({
             (Linking from {edgeStartNode.name})
           </span>
         )}
+      </div>
+
+      {/* FLOATING ZOOM AND RECENTER CONTROLS (Reduces Map Clutter, Easy adjustments) */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
+        }}
+      >
+        <button
+          onClick={() => mapRef.current && mapRef.current.zoomIn()}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '8px',
+            background: 'rgba(10, 17, 32, 0.9)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            color: '#fff',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.25rem',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-purple)'; e.currentTarget.style.boxShadow = '0 0 10px rgba(168,85,247,0.4)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)'; }}
+        >
+          ＋
+        </button>
+        <button
+          onClick={() => mapRef.current && mapRef.current.zoomOut()}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '8px',
+            background: 'rgba(10, 17, 32, 0.9)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            color: '#fff',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.25rem',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-purple)'; e.currentTarget.style.boxShadow = '0 0 10px rgba(168,85,247,0.4)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)'; }}
+        >
+          －
+        </button>
+        <button
+          onClick={() => mapRef.current && mapRef.current.setView([40.719, -73.996], 14)}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '8px',
+            background: 'rgba(10, 17, 32, 0.9)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            color: '#fff',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.1rem',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            transition: 'all 0.2s ease',
+            outline: 'none'
+          }}
+          title="Recenter Map"
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-purple)'; e.currentTarget.style.boxShadow = '0 0 10px rgba(168,85,247,0.4)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)'; }}
+        >
+          🎯
+        </button>
       </div>
     </div>
   );

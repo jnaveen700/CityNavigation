@@ -58,7 +58,7 @@ export default function Sidebar({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2 className="glow-text" style={{ fontSize: '1.6rem', color: '#a855f7', marginBottom: '4px' }}>
-            MetroFlow
+            UrbanPulse
           </h2>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
             City Traffic Flow Optimizer
@@ -405,7 +405,7 @@ export default function Sidebar({
 
       {/* Footer Info */}
       <div style={{ borderTop: '1px solid var(--border-glass)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#64748b' }}>
-        <span>MetroFlow v1.2</span>
+        <span>UrbanPulse v1.2</span>
         <span>Made with 💜</span>
       </div>
     </div>
