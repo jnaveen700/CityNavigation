@@ -127,7 +127,7 @@ export default function LeafletMap({
     trafficLightsRef.current = lights;
   }, [nodes]);
 
-  // Render Edges (Roads)
+  // Render Edges (Roads) using OSRM geometry
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -153,17 +153,22 @@ export default function LeafletMap({
       const roadColor = isMst ? '#06b6d4' : (trafficColors[edge.traffic] || '#475569');
       const roadWeight = isMst ? 6 : (edge.lanes * 2.5) + 1.5;
 
-      // Dim non-route roads significantly if an active route is shown
       let roadOpacity = isMst ? 0.95 : 0.65;
       if (hasActiveRoute) {
         roadOpacity = isPartOfRoute ? 0.95 : 0.12;
       }
 
-      const polyline = L.polyline([[src.lat, src.lng], [dest.lat, dest.lng]], {
+      // Draw using real OSRM street coordinates list if present, fallback to straight line
+      const latlngs = (edge.geometry && edge.geometry.length > 0) 
+        ? edge.geometry 
+        : [[src.lat, src.lng], [dest.lat, dest.lng]];
+
+      const polyline = L.polyline(latlngs, {
         color: roadColor,
         weight: roadWeight,
         opacity: roadOpacity,
-        lineCap: 'round'
+        lineCap: 'round',
+        lineJoin: 'round'
       });
 
       // Bind interactions
@@ -188,7 +193,7 @@ export default function LeafletMap({
     });
   }, [nodes, edges, mstEdges, activeRoute, mode, onDeleteEdge]);
 
-  // Render Nodes (Intersections) and Traffic Lights
+  // Render Nodes (Intersections)
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -206,7 +211,6 @@ export default function LeafletMap({
       const lightState = trafficLightsRef.current[node.id] || { color: 'green' };
       const lightHex = lightState.color === 'green' ? '#10b981' : (lightState.color === 'yellow' ? '#f59e0b' : '#ef4444');
 
-      // Dim non-route intersections when route is active
       let nodeOpacity = 1.0;
       if (hasActiveRoute) {
         nodeOpacity = isPartOfRoute ? 1.0 : 0.25;
@@ -268,7 +272,7 @@ export default function LeafletMap({
     });
   }, [nodes, startNode, endNode, selectedNode, edgeStartNode, activeRoute, mode, onNodeSelect, onDeleteNode, onAddRoad]);
 
-  // Render Routes overlay
+  // Render Curved Routes overlay concatenating OSRM segments
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -277,13 +281,32 @@ export default function LeafletMap({
     if (activeRoute && activeRoute.pathEdges && activeRoute.pathEdges.length > 0) {
       const latlngs = [];
 
-      activeRoute.path.forEach(nodeId => {
-        const node = nodes.find(n => n.id === nodeId);
-        if (node) latlngs.push([node.lat, node.lng]);
+      activeRoute.pathEdges.forEach(edgeId => {
+        const edge = edges.find(e => e.id === edgeId);
+        if (edge) {
+          if (edge.geometry && edge.geometry.length > 0) {
+            // Align geometries in coordinate sequence (source -> target order)
+            const coords = [...edge.geometry];
+            if (latlngs.length > 0) {
+              const lastPt = latlngs[latlngs.length - 1];
+              const distToFirst = Math.hypot(lastPt[0] - coords[0][0], lastPt[1] - coords[0][1]);
+              const distToLast = Math.hypot(lastPt[0] - coords[coords.length - 1][0], lastPt[1] - coords[coords.length - 1][1]);
+              if (distToLast < distToFirst) {
+                coords.reverse();
+              }
+            }
+            latlngs.push(...coords);
+          } else {
+            const src = nodes.find(n => n.id === edge.source);
+            const dest = nodes.find(n => n.id === edge.target);
+            if (src && dest) {
+              latlngs.push([src.lat, src.lng], [dest.lat, dest.lng]);
+            }
+          }
+        }
       });
 
       if (latlngs.length > 0) {
-        // High contrast glowing neon rose/pink line
         L.polyline(latlngs, {
           color: '#f43f5e',
           weight: 12,
@@ -292,7 +315,6 @@ export default function LeafletMap({
           lineCap: 'round'
         }).addTo(routeGroupRef.current);
 
-        // Core white center running line
         const routeCore = L.polyline(latlngs, {
           color: '#ffffff',
           weight: 4,
@@ -314,7 +336,7 @@ export default function LeafletMap({
         return () => clearInterval(animInterval);
       }
     }
-  }, [activeRoute, nodes]);
+  }, [activeRoute, nodes, edges]);
 
   // Search animation
   useEffect(() => {
@@ -350,7 +372,7 @@ export default function LeafletMap({
     }
   }, [visitedNodes, nodes, simulationSpeed]);
 
-  // Vehicle Simulation Loops
+  // Vehicle Simulation Loops (Steering along curved streets)
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -372,8 +394,20 @@ export default function LeafletMap({
       const progress = Math.random();
       const color = vehicleColors[Math.floor(Math.random() * vehicleColors.length)];
 
-      const vlat = srcNode.lat + (destNode.lat - srcNode.lat) * progress;
-      const vlng = srcNode.lng + (destNode.lng - srcNode.lng) * progress;
+      const coordsList = (edge.geometry && edge.geometry.length > 0)
+        ? edge.geometry
+        : [[srcNode.lat, srcNode.lng], [destNode.lat, destNode.lng]];
+
+      // Default spawn position
+      const numSegments = coordsList.length - 1;
+      const indexFloat = progress * numSegments;
+      const index = Math.min(Math.floor(indexFloat), numSegments - 1);
+      const segmentProgress = indexFloat - index;
+      const startPt = coordsList[index];
+      const endPt = coordsList[index + 1] || startPt;
+
+      const vlat = startPt[0] + (endPt[0] - startPt[0]) * segmentProgress;
+      const vlng = startPt[1] + (endPt[1] - startPt[1]) * segmentProgress;
 
       const vMarker = L.circleMarker([vlat, vlng], {
         radius: 4.5,
@@ -480,13 +514,30 @@ export default function LeafletMap({
           vehicle.progress = nextProgress;
         }
 
-        const startPt = vehicle.direction === 1 ? src : dest;
-        const endPt = vehicle.direction === 1 ? dest : src;
+        // Segment-by-segment interpolation along OSRM curve geometry
+        const coordsList = (edge.geometry && edge.geometry.length > 0)
+          ? edge.geometry
+          : [[src.lat, src.lng], [dest.lat, dest.lng]];
 
-        const vlat = startPt.lat + (endPt.lat - startPt.lat) * vehicle.progress;
-        const vlng = startPt.lng + (endPt.lng - startPt.lng) * vehicle.progress;
+        // Reverse coordinates if vehicle is moving in target -> source direction
+        const list = vehicle.direction === -1 ? [...coordsList].reverse() : coordsList;
 
-        vehicle.marker.setLatLng([vlat, vlng]);
+        const numSegments = list.length - 1;
+        if (numSegments > 0) {
+          const indexFloat = vehicle.progress * numSegments;
+          const index = Math.min(Math.floor(indexFloat), numSegments - 1);
+          const segmentProgress = indexFloat - index;
+
+          const startPt = list[index];
+          const endPt = list[index + 1] || startPt;
+
+          const vlat = startPt[0] + (endPt[0] - startPt[0]) * segmentProgress;
+          const vlng = startPt[1] + (endPt[1] - startPt[1]) * segmentProgress;
+
+          vehicle.marker.setLatLng([vlat, vlng]);
+        } else {
+          vehicle.marker.setLatLng(list[0]);
+        }
       });
 
     }, 50);
